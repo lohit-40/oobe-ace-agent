@@ -37,9 +37,9 @@ export async function runAgent(onLog?: (msg: string) => void) {
             wallet: new Wallet(walletManager.keypair)
         });
 
-        const [globalRegistry] = Pdas.deriveGlobalRegistry();
-        const [agent] = Pdas.deriveAgent(walletManager.keypair.publicKey);
-        const [agentStats] = Pdas.deriveAgentStats(agent);
+        const [globalRegistry] = Pdas.getGlobalPDA();
+        const [agent] = Pdas.getAgentPDA(walletManager.keypair.publicKey);
+        const [agentStats] = Pdas.getAgentStatsPDA(agent);
 
         let isRegistered = false;
         try {
