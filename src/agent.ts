@@ -2,8 +2,7 @@ import { extractProjectData } from './services/researcher.js';
 import { generateMarketingCopy } from './services/copywriter.js';
 import { generateImage } from './services/designer.js';
 import { X402WalletManager } from './x402-wallet.js';
-import { SapClient } from '@oobe-protocol-labs/synapse-sap-sdk';
-import { AgentBuilder, DiscoveryRegistry } from '@oobe-protocol-labs/synapse-sap-sdk/dist/esm/registries/index.js';
+import { SapClient, Pdas } from '@oobe-protocol-labs/synapse-sap-sdk';
 import { Wallet } from '@coral-xyz/anchor';
 
 export async function runAgent(onLog?: (msg: string) => void) {
@@ -37,18 +36,42 @@ export async function runAgent(onLog?: (msg: string) => void) {
             connection: walletManager.connection,
             wallet: new Wallet(walletManager.keypair)
         });
-        const builder = new AgentBuilder(sapClient.program as any);
-        const discovery = new DiscoveryRegistry(sapClient.program as any);
 
-        const registerResult = await builder
-            .agent("Ace Marketer")
-            .description("Autonomous Agent that utilizes Ace Data Cloud to build and design marketing material.")
-            .addCapability("ace:research", { protocol: "ace" })
-            .addCapability("ace:llm", { protocol: "ace" })
-            .addCapability("ace:image", { protocol: "ace" })
-            .register();
+        const [globalRegistry] = Pdas.deriveGlobalRegistry();
+        const [agent] = Pdas.deriveAgent(walletManager.keypair.publicKey);
+        const [agentStats] = Pdas.deriveAgentStats(agent);
 
-        console.log(`[Agent] Registered successfully! TX: ${registerResult.txSignature}`);
+        let isRegistered = false;
+        try {
+            await sapClient.program.account.agentAccount.fetch(agent);
+            isRegistered = true;
+            console.log(`[Agent] Already registered on SAP Network.`);
+        } catch (e) {}
+
+        if (!isRegistered) {
+            const ix = await sapClient.agent.registerAgent({
+                signer: walletManager.keypair,
+                wallet: walletManager.keypair.publicKey,
+                agent,
+                agentStats,
+                globalRegistry,
+                name: "Ace Marketer",
+                description: "Autonomous Agent that utilizes Ace Data Cloud to build and design marketing material.",
+                capabilities: [
+                    { id: "ace:research", protocol_id: "ace", version: "1.0", description: "" } as any,
+                    { id: "ace:llm", protocol_id: "ace", version: "1.0", description: "" } as any,
+                    { id: "ace:image", protocol_id: "ace", version: "1.0", description: "" } as any
+                ],
+                pricing: [],
+                protocols: ["ace"],
+                agentId: null,
+                agentUri: null,
+                x402Endpoint: null
+            });
+            const tx = await sapClient.buildTransaction([ix], walletManager.keypair.publicKey);
+            const txSignature = await sapClient.sendTransaction(tx, [walletManager.keypair]);
+            console.log(`[Agent] Registered successfully! TX: ${txSignature}`);
+        }
 
         // 2. Discover / Select Target
         const targetProject = "Solana AI Agent Platform";
@@ -56,9 +79,10 @@ export async function runAgent(onLog?: (msg: string) => void) {
 
         // 2.5 Discover Tools via SAP (Bounty Requirement)
         console.log(`\n[Agent] Discovering tools via Synapse Agent Protocol (SAP)...`);
-        const researchTools = await discovery.findToolsByCategory("research");
+        const allTools = await sapClient.program.account.toolDescriptor.all();
+        const researchTools = allTools.filter(t => String(t.account.category) === "0" || String(t.account.category) === "research");
         console.log(`[SAP Discovery] Found ${researchTools.length} research tools on-chain.`);
-        const llmTools = await discovery.findToolsByCategory("copywriting");
+        const llmTools = allTools.filter(t => String(t.account.category) === "1" || String(t.account.category) === "copywriting");
         console.log(`[SAP Discovery] Found ${llmTools.length} copywriting tools on-chain.`);
 
         // 3. Execution Pipeline (Paid via x402)
