@@ -5,7 +5,21 @@ import { X402WalletManager } from './x402-wallet.js';
 import { SapClient } from '@oobe-protocol-labs/synapse-sap-sdk';
 import { Wallet } from '@coral-xyz/anchor';
 
-async function main() {
+export async function runAgent(onLog?: (msg: string) => void) {
+    const originalLog = console.log;
+    const originalError = console.error;
+    
+    if (onLog) {
+        console.log = (...args) => {
+            onLog(args.join(" "));
+            originalLog.apply(console, args);
+        };
+        console.error = (...args) => {
+            onLog("ERROR: " + args.join(" "));
+            originalError.apply(console, args);
+        };
+    }
+
     console.log("==========================================");
     console.log("🚀 Starting Autonomous Marketer Agent 🚀");
     console.log("==========================================\n");
@@ -73,7 +87,15 @@ async function main() {
         } else {
             console.error("❌ Agent Execution Failed:", error);
         }
+    } finally {
+        if (onLog) {
+            console.log = originalLog;
+            console.error = originalError;
+        }
     }
 }
 
-main();
+// If running directly via CLI
+if (require.main === module) {
+    runAgent();
+}
