@@ -1,25 +1,15 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-class AceDataCloud {
-    llm = {
-        generate: async (opts: any) => ({ text: `🔥 The ultimate Solana AI Agent platform is here! Experience unparalleled TPS and low latency. #Solana #AI #Agents` })
-    };
-    constructor(config: any) {}
-}
-
-const apiKey = process.env.ACE_DATA_CLOUD_API_KEY;
-const aceClient = new AceDataCloud({ apiKey });
-
-export async function generateMarketingCopy(contextData: string, x402Client: any) {
+export async function generateMarketingCopy(contextData: string, aceClient: any) {
     console.log(`[Copywriter] Generating viral marketing copy based on extracted context...`);
     
-    const response = await aceClient.llm.generate({
-        prompt: `Write a viral Twitter thread based on this project data: ${contextData}`,
-        model: 'ace-llama-3-70b',
-        paymentFacilitator: x402Client
+    // Generate the marketing copy based on the research
+    const response = await aceClient.openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [{ role: 'user', content: `Write a viral, high-energy Twitter thread based on this project data: ${contextData}` }]
     });
 
     console.log(`[Copywriter] Copy generation complete. Paid via x402.`);
-    return response.text;
+    return response.choices[0].message.content;
 }

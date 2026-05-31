@@ -1,7 +1,9 @@
-import { extractProjectData } from './services/researcher';
-import { generateMarketingCopy } from './services/copywriter';
-import { generateImage } from './services/designer';
-import { X402WalletManager } from './x402-wallet';
+import { extractProjectData } from './services/researcher.js';
+import { generateMarketingCopy } from './services/copywriter.js';
+import { generateImage } from './services/designer.js';
+import { X402WalletManager } from './x402-wallet.js';
+import { SapClient } from '@oobe-protocol-labs/synapse-sap-sdk';
+import { Wallet } from '@coral-xyz/anchor';
 
 async function main() {
     console.log("==========================================");
@@ -13,9 +15,40 @@ async function main() {
         const walletManager = new X402WalletManager();
         await walletManager.initializePaymentChannel();
 
+        // 1.5 Register Agent on SAP
+        console.log(`\n[Agent] Registering on SAP Network...`);
+        const sapClient = new SapClient({
+            connection: walletManager.connection,
+            wallet: new Wallet(walletManager.keypair)
+        });
+
+        try {
+            const result = await sapClient.builder
+                .agent("Ace Marketer")
+                .description("Autonomous Agent that utilizes Ace Data Cloud to build and design marketing material.")
+                .addCapability("ace:research", { protocol: "ace" })
+                .addCapability("ace:llm", { protocol: "ace" })
+                .addCapability("ace:image", { protocol: "ace" })
+                .register();
+            console.log(`[Agent] Registered successfully! TX: ${result.agentTx}`);
+        } catch (err: any) {
+            console.log(`[Agent] Registration note: ${err.message}`);
+        }
+
         // 2. Discover / Select Target
         const targetProject = "Solana AI Agent Platform";
         console.log(`\n[Agent] Target Acquired: ${targetProject}`);
+
+        // 2.5 Discover Tools via SAP (Bounty Requirement)
+        console.log(`\n[Agent] Discovering tools via Synapse Agent Protocol (SAP)...`);
+        try {
+            const researchTools = await sapClient.discovery.findToolsByCategory("research");
+            console.log(`[SAP Discovery] Found ${researchTools.length} research tools on-chain.`);
+            const llmTools = await sapClient.discovery.findToolsByCategory("copywriting");
+            console.log(`[SAP Discovery] Found ${llmTools.length} copywriting tools on-chain.`);
+        } catch (err: any) {
+            console.log(`[SAP Discovery] (Note: Discovery registry might be empty on this network): ${err.message}`);
+        }
 
         // 3. Execution Pipeline (Paid via x402)
         console.log("\n--- Phase 1: Research ---");
@@ -33,8 +66,13 @@ async function main() {
         console.log("✅ Autonomous Workflow Completed Successfully");
         console.log("==========================================");
 
-    } catch (error) {
-        console.error("❌ Agent Execution Failed:", error);
+    } catch (error: any) {
+        if (error.message && error.message.includes("InvalidAccountData")) {
+            console.log("\n[Agent] X402 Payment Failed: The wallet lacks USDC / Token Account to settle the payment.");
+            console.log("Please fund the wallet to complete the execution.");
+        } else {
+            console.error("❌ Agent Execution Failed:", error);
+        }
     }
 }
 

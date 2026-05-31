@@ -1,19 +1,15 @@
-import { Keypair, Connection } from '@solana/web3.js';
+import { Keypair, Connection, Transaction, SendOptions } from '@solana/web3.js';
+import { AceDataCloud } from '@acedatacloud/sdk';
+import { createX402PaymentHandler } from '@acedatacloud/x402-client';
 import fs from 'fs';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Mock X402Client since SDK is not public yet
-class X402Client {
-    constructor(config: any) {}
-    async connect() {}
-}
-
 export class X402WalletManager {
     public keypair: Keypair;
     public connection: Connection;
-    public client: X402Client;
+    public client: AceDataCloud;
 
     constructor() {
         const walletPath = process.env.SOLANA_WALLET_JSON_PATH;
@@ -25,19 +21,32 @@ export class X402WalletManager {
         const secretKey = Uint8Array.from(JSON.parse(secretKeyString));
         this.keypair = Keypair.fromSecretKey(secretKey);
 
-        this.connection = new Connection(process.env.RPC_URL || 'https://api.devnet.solana.com');
+        const rpcUrl = process.env.RPC_URL || 'https://api.devnet.solana.com';
+        this.connection = new Connection(rpcUrl);
         
-        // Initialize the x402 client to facilitate automated payments
-        this.client = new X402Client({
-            payer: this.keypair,
-            connection: this.connection,
+        // Wrap the Keypair into the SolanaWalletAdapter interface required by X402Client
+        const solanaWalletAdapter = {
+            publicKey: this.keypair.publicKey,
+            signAndSendTransaction: async (tx: Transaction, options?: SendOptions) => {
+                const signature = await this.connection.sendTransaction(tx, [this.keypair], options);
+                return { signature };
+            }
+        };
+
+        // Instantiate the X402 payment handler for Solana
+        const paymentHandler = createX402PaymentHandler({
+            network: 'solana',
+            solanaWallet: solanaWalletAdapter
+        });
+
+        // Initialize AceDataCloud with the x402 payment handler
+        this.client = new AceDataCloud({
+            apiKey: process.env.ACE_DATA_CLOUD_API_KEY, 
+            paymentHandler: paymentHandler
         });
     }
 
     public async initializePaymentChannel() {
-        console.log(`[Wallet] Initializing x402 payment channel for ${this.keypair.publicKey.toBase58()}...`);
-        // Setup state channel or verify balance logic goes here
-        await this.client.connect();
-        console.log(`[Wallet] x402 channel ready.`);
+        console.log(`[Wallet] Loaded wallet ${this.keypair.publicKey.toBase58()} for x402 payments.`);
     }
 }

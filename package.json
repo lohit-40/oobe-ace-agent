@@ -4,19 +4,28 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node src/agent.ts",
+    "start": "npx esbuild src/agent.ts --bundle --platform=node --format=cjs --outfile=dist/agent.js && node dist/agent.js",
+    "airdrop": "npx esbuild scripts/airdrop-sol.ts --bundle --platform=node --format=cjs --outfile=dist/airdrop-sol.js && node dist/airdrop-sol.js",
     "test": "jest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "^25.9.1",
+    "esbuild": "^0.28.0",
     "jest": "^30.4.2",
     "ts-jest": "^29.4.11",
     "ts-node": "^10.9.2",
+    "tsx": "^4.22.3",
     "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "@acedatacloud/sdk": "^2026.504.2",
+    "@acedatacloud/x402-client": "^2026.531.1",
+    "@coral-xyz/anchor": "^0.32.1",
+    "@oobe-protocol-labs/synapse-client-sdk": "^2.0.6",
+    "@oobe-protocol-labs/synapse-sap-sdk": "^0.19.8"
   }
 }
