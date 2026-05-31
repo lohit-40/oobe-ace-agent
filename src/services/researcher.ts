@@ -11,11 +11,7 @@ export async function extractProjectData(topic: string, aceClient: any) {
         });
         return response.choices[0].message.content || "";
     } catch (err: any) {
-        const msg = (err.message || "").toLowerCase();
-        if (msg.includes("invalid account data") || msg.includes("simulation failed") || msg.includes("402")) {
-            console.log("\n[Researcher] ⚠️ Insufficient USDC detected. Bypassing live x402 payment and falling back to simulated data for demo purposes...");
-            return `MOCK RESEARCH: ${topic} is rapidly expanding in the Web3 space. On-chain AI agents are becoming the standard for decentralized execution.`;
-        }
-        throw err;
+        console.log("\n[Researcher] ⚠️ Network / USDC check failed. Bypassing live x402 payment and falling back to simulated data for demo purposes...");
+        return `MOCK RESEARCH: ${topic} is rapidly expanding in the Web3 space. On-chain AI agents are becoming the standard for decentralized execution.`;
     }
 }

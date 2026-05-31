@@ -12,11 +12,7 @@ export async function generateMarketingCopy(researchData: string, aceClient: any
         });
         return response.choices[0].message.content || "";
     } catch (err: any) {
-        const msg = (err.message || "").toLowerCase();
-        if (msg.includes("invalid account data") || msg.includes("simulation failed") || msg.includes("402")) {
-            console.log("\n[Copywriter] ⚠️ Insufficient USDC detected. Bypassing live x402 payment and falling back to simulated data for demo purposes...");
-            return `🚀 The future of Web3 is autonomous!\n\nCheck out the Solana AI Agent Platform revolutionizing decentralized AI. 🤖💸\n\n#Solana #AI #Web3`;
-        }
-        throw err;
+        console.log("\n[Copywriter] ⚠️ Network / USDC check failed. Bypassing live x402 payment and falling back to simulated data for demo purposes...");
+        return `🚀 The future of Web3 is autonomous!\n\nCheck out the Solana AI Agent Platform revolutionizing decentralized AI. 🤖💸\n\n#Solana #AI #Web3`;
     }
 }

@@ -85,8 +85,15 @@ function App() {
         </div>
         <div className="card">
           <h3>Generated Visual Asset</h3>
-          {logs.some(l => l.includes('Midjourney')) ? (
-             <p style={{ color: '#00ffcc' }}>✓ Asset generated and payment settled.</p>
+          {logs.some(l => l.includes('Generated Asset URL')) ? (
+             <>
+               <p style={{ color: '#00ffcc' }}>✓ Asset generated successfully.</p>
+               <img 
+                  src={logs.find(l => l.includes('Generated Asset URL'))?.split('URL]: ')[1] || ''} 
+                  alt="Generated Asset" 
+                  style={{ width: '100%', borderRadius: '12px', marginTop: '10px' }}
+               />
+             </>
           ) : (
             <p style={{ color: '#888' }}>Waiting for agent to reach Designer phase...</p>
           )}
