@@ -8,7 +8,8 @@ export async function generateImage(marketingCopy: string, aceClient: any): Prom
         });
         return response.imageUrl || "https://example.com/cyberpunk.png";
     } catch (err: any) {
-        console.log("\n[Designer] ⚠️ Network / USDC check failed. Bypassing live x402 payment and falling back to simulated data for demo purposes...");
-        return `https://images.unsplash.com/photo-1614729939124-032f0b56c9ce?auto=format&fit=crop&q=80&w=1000`;
+        console.log("\n[Designer] ⚠️ Network / USDC check failed. Rerouting to decentralized public node (Pollinations)...");
+        const prompt = encodeURIComponent(`Cyberpunk hacker marketing solana web3 glowing neon high quality 4k trending on artstation`);
+        return `https://image.pollinations.ai/prompt/${prompt}?width=1000&height=500&nologo=true`;
     }
 }

@@ -12,7 +12,14 @@ export async function generateMarketingCopy(researchData: string, aceClient: any
         });
         return response.choices[0].message.content || "";
     } catch (err: any) {
-        console.log("\n[Copywriter] ⚠️ Network / USDC check failed. Bypassing live x402 payment and falling back to simulated data for demo purposes...");
-        return `🚀 The future of Web3 is autonomous!\n\nCheck out the Solana AI Agent Platform revolutionizing decentralized AI. 🤖💸\n\n#Solana #AI #Web3`;
+        console.log("\n[Copywriter] ⚠️ Network / USDC check failed. Rerouting to decentralized public node (Pollinations)...");
+        try {
+            const prompt = encodeURIComponent(`Write a short, viral Web3 Twitter thread (2 tweets max) about: ${researchData}. Include hashtags #Solana #AI`);
+            const res = await fetch(`https://text.pollinations.ai/${prompt}`);
+            const text = await res.text();
+            return text;
+        } catch(e) {
+            return `🚀 The future of Web3 is autonomous!\n\nCheck out the Solana AI Agent Platform revolutionizing decentralized AI. 🤖💸\n\n#Solana #AI #Web3`;
+        }
     }
 }

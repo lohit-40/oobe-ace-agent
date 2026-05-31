@@ -11,7 +11,14 @@ export async function extractProjectData(topic: string, aceClient: any) {
         });
         return response.choices[0].message.content || "";
     } catch (err: any) {
-        console.log("\n[Researcher] ⚠️ Network / USDC check failed. Bypassing live x402 payment and falling back to simulated data for demo purposes...");
-        return `MOCK RESEARCH: ${topic} is rapidly expanding in the Web3 space. On-chain AI agents are becoming the standard for decentralized execution.`;
+        console.log("\n[Researcher] ⚠️ Network / USDC check failed. Rerouting to decentralized public node (Pollinations)...");
+        try {
+            const prompt = encodeURIComponent(`Give me a detailed 3 sentence summary of the latest trends in ${topic} for web3. Focus on AI Agents.`);
+            const res = await fetch(`https://text.pollinations.ai/${prompt}`);
+            const text = await res.text();
+            return text;
+        } catch(e) {
+            return `MOCK RESEARCH: ${topic} is rapidly expanding in the Web3 space. On-chain AI agents are becoming the standard for decentralized execution.`;
+        }
     }
 }
