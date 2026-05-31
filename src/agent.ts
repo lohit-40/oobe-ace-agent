@@ -2,7 +2,8 @@ import { extractProjectData } from './services/researcher.js';
 import { generateMarketingCopy } from './services/copywriter.js';
 import { generateImage } from './services/designer.js';
 import { X402WalletManager } from './x402-wallet.js';
-import { SapConnection } from '@oobe-protocol-labs/synapse-sap-sdk';
+import { SapClient } from '@oobe-protocol-labs/synapse-sap-sdk';
+import { AgentBuilder, DiscoveryRegistry } from '@oobe-protocol-labs/synapse-sap-sdk/dist/esm/registries/index.js';
 import { Wallet } from '@coral-xyz/anchor';
 
 export async function runAgent(onLog?: (msg: string) => void) {
@@ -32,10 +33,14 @@ export async function runAgent(onLog?: (msg: string) => void) {
         // 1.5 Register Agent on SAP
         console.log(`\n[Agent] Registering on SAP Network...`);
         
-        const conn = SapConnection.devnet();
-        const sapClient = conn.fromKeypair(walletManager.keypair);
+        const sapClient = new SapClient({
+            connection: walletManager.connection,
+            wallet: new Wallet(walletManager.keypair)
+        });
+        const builder = new AgentBuilder(sapClient.program as any);
+        const discovery = new DiscoveryRegistry(sapClient.program as any);
 
-        const registerResult = await sapClient.builder
+        const registerResult = await builder
             .agent("Ace Marketer")
             .description("Autonomous Agent that utilizes Ace Data Cloud to build and design marketing material.")
             .addCapability("ace:research", { protocol: "ace" })
@@ -43,7 +48,7 @@ export async function runAgent(onLog?: (msg: string) => void) {
             .addCapability("ace:image", { protocol: "ace" })
             .register();
 
-        console.log(`[Agent] Registered successfully! TX: ${registerResult.agentTx}`);
+        console.log(`[Agent] Registered successfully! TX: ${registerResult.txSignature}`);
 
         // 2. Discover / Select Target
         const targetProject = "Solana AI Agent Platform";
@@ -51,9 +56,9 @@ export async function runAgent(onLog?: (msg: string) => void) {
 
         // 2.5 Discover Tools via SAP (Bounty Requirement)
         console.log(`\n[Agent] Discovering tools via Synapse Agent Protocol (SAP)...`);
-        const researchTools = await sapClient.discovery.findToolsByCategory("research");
+        const researchTools = await discovery.findToolsByCategory("research");
         console.log(`[SAP Discovery] Found ${researchTools.length} research tools on-chain.`);
-        const llmTools = await sapClient.discovery.findToolsByCategory("copywriting");
+        const llmTools = await discovery.findToolsByCategory("copywriting");
         console.log(`[SAP Discovery] Found ${llmTools.length} copywriting tools on-chain.`);
 
         // 3. Execution Pipeline (Paid via x402)
