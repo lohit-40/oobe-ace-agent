@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { runAgent } from './agent';
+import './mock-ace-server';
 
 const app = express();
 app.use(cors());

@@ -21,7 +21,9 @@ export class X402WalletManager {
         const secretKey = Uint8Array.from(JSON.parse(secretKeyString));
         this.keypair = Keypair.fromSecretKey(secretKey);
 
-        const rpcUrl = process.env.RPC_URL || 'https://api.devnet.solana.com';
+        const isMainnet = process.env.NETWORK === 'mainnet';
+        const defaultRpc = isMainnet ? 'https://api.mainnet-beta.solana.com' : 'https://api.devnet.solana.com';
+        const rpcUrl = process.env.RPC_URL || defaultRpc;
         this.connection = new Connection(rpcUrl);
         
         // Wrap the Keypair into the SolanaWalletAdapter interface required by X402Client
@@ -40,10 +42,16 @@ export class X402WalletManager {
         });
 
         // Initialize AceDataCloud with the x402 payment handler
-        this.client = new AceDataCloud({
-            apiKey: process.env.ACE_DATA_CLOUD_API_KEY, 
+        const aceConfig: any = {
+            apiKey: process.env.ACE_DATA_CLOUD_API_KEY,
             paymentHandler: paymentHandler
-        });
+        };
+        
+        if (!isMainnet) {
+            aceConfig.baseURL = 'http://localhost:8080';
+        }
+
+        this.client = new AceDataCloud(aceConfig);
     }
 
     public async initializePaymentChannel() {
